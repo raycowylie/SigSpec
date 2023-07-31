@@ -57,18 +57,22 @@ namespace SigSpec
             var document = generator.GenerateForHubsAsync(new Dictionary<string, Type>(hubs.Select(t => new KeyValuePair<string, Type>(t.Name, t)))).Result;
 
             Directory.SetCurrentDirectory(currentDir);
-            
-            
+
+
             //On va chercher RSimplified et on retire les champs qui ne sont pas pertinent.
-            var rSimplified = document.Definitions["RSimplified"];
-            foreach (var key in rSimplified.Properties.Keys)
+            if (document.Definitions.TryGetValue("RSimplified", out var rSimplified))
             {
-                if (key != "stringID" && key != "properties" && key != "objectValue")
-                    rSimplified.Properties.Remove(key);
+                foreach (var key in rSimplified.Properties.Keys)
+                {
+                    if (key != "stringID" && key != "properties" && key != "objectValue")
+                        rSimplified.Properties.Remove(key);
+                }
             }
 
-            RemoveLong(document.Definitions["DiagSensor"]);
-            RemoveLong(document.Definitions["DiagItem"]);
+            if(document.Definitions.TryGetValue("DiagSensor", out var diagSensorDef))
+                RemoveLong(diagSensorDef);
+            if(document.Definitions.TryGetValue("DiagItem", out var diagItemDef))   
+                RemoveLong(diagItemDef);
 
             var json = document.ToJson();
             if(jsonFile is null)
@@ -215,19 +219,22 @@ namespace SigSpec
             foreach (string dll in dlls)
                 AppDomain.CurrentDomain.Load(File.ReadAllBytes(dll));
 
-            foreach (string dll in Directory.GetFiles(Path.Join(dllDir, "win-x64"), "*.dll"))
+            if (Directory.Exists(Path.Join(dllDir, "win-x64")))
             {
-                try
+                foreach (string dll in Directory.GetFiles(Path.Join(dllDir, "win-x64"), "*.dll"))
                 {
-                    AppDomain.CurrentDomain.Load(File.ReadAllBytes(dll));
-                }
-                catch (BadImageFormatException e)
-                {
-                    Console.Error.WriteLine("Not loaded : " + dll);
-                }
-                catch (Exception e)
-                {
-                    Console.Error.WriteLine("Not loaded : " + dll);
+                    try
+                    {
+                        AppDomain.CurrentDomain.Load(File.ReadAllBytes(dll));
+                    }
+                    catch (BadImageFormatException e)
+                    {
+                        Console.Error.WriteLine("Not loaded : " + dll);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.Error.WriteLine("Not loaded : " + dll);
+                    }
                 }
             }
 
