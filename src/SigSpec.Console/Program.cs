@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using SigSpec.CodeGeneration.CSharp;
 using SigSpec.CodeGeneration.TypeScript;
 using SigSpec.Core;
+using Microsoft.AspNetCore.Http;
 
 namespace SigSpec
 {
@@ -24,6 +25,10 @@ namespace SigSpec
         
         
         private static string? assemblyNamespace = null;
+
+        private static string[] ulongReplace = Array.Empty<string>();
+
+        private static Dictionary<string, string[]> keepList = new Dictionary<string, string[]>();
 
         
             
@@ -58,21 +63,38 @@ namespace SigSpec
 
             Directory.SetCurrentDirectory(currentDir);
 
-
-            //On va chercher RSimplified et on retire les champs qui ne sont pas pertinent.
-            if (document.Definitions.TryGetValue("RSimplified", out var rSimplified))
+            //Dans une classe, on supprime toutes les propriétés qui ne sont pas dans la liste associé celle-ci.
+            //      Ex: -k RSimplified=stringID,properties,objectValue
+            foreach(string key in keepList.Keys)
             {
-                foreach (var key in rSimplified.Properties.Keys)
+                if(document.Definitions.TryGetValue(key, out var def))
                 {
-                    if (key != "stringID" && key != "properties" && key != "objectValue")
-                        rSimplified.Properties.Remove(key);
+                    foreach(string prop in def.Properties.Keys)
+                    {
+                        if(!keepList[key].Contains(prop))
+                            def.Properties.Remove(prop);
+                    }
                 }
             }
 
-            if(document.Definitions.TryGetValue("DiagSensor", out var diagSensorDef))
-                RemoveLong(diagSensorDef);
-            if(document.Definitions.TryGetValue("DiagItem", out var diagItemDef))   
-                RemoveLong(diagItemDef);
+            ////On va chercher RSimplified et on retire les champs qui ne sont pas pertinent.
+            //if (document.Definitions.TryGetValue("RSimplified", out var rSimplified))
+            //{
+            //    foreach (var key in rSimplified.Properties.Keys)
+            //    {
+            //        if (key != "stringID" && key != "properties" && key != "objectValue")
+            //            rSimplified.Properties.Remove(key);
+            //    }
+            //}
+
+            //On remplace tous les ulong par string dans les definitions de ulongReplace
+            //      Ex: ---replaceUlong DiagSensor,DiagItem
+            foreach (var toReplace in ulongReplace)
+            {
+                if(document.Definitions.TryGetValue(toReplace, out var toReplaceDef))   
+                    RemoveLong(toReplaceDef);    
+            }
+            
 
             var json = document.ToJson();
             if(jsonFile is null)
@@ -143,6 +165,17 @@ namespace SigSpec
                         i++;
                         assemblyNamespace = args[i];
                     }
+                    else if (args[i].StartsWith("--replaceUlong"))
+                    {
+                        i++;
+                        ulongReplace = args[i].Split(',');
+                    }
+                    else if (args[i].StartsWith("--keep") && args.Length > i + 1)
+                    {
+                        i++;
+                        string[] split = args[i].Split('=');
+                        keepList.Add(split[0], split[1].Split(','));
+                    }
                 }
                 else if (args[i].StartsWith("-"))
                 {
@@ -171,6 +204,17 @@ namespace SigSpec
                         i++;
                         targetAssemblyName = args[i];
                     }
+                    else if (args[i].EndsWith("n") && args.Length > i + 1)
+                    {
+                        i++;
+                        assemblyNamespace = args[i];
+                    }
+                    else if (args[i].EndsWith("k") && args.Length > i + 1)
+                    {
+                        i++;
+                        string[] split = args[i].Split('=');
+                        keepList.Add(split[0], split[1].Split(','));
+                    }
                 }
                 else
                 {
@@ -191,7 +235,9 @@ namespace SigSpec
                                     "  -j, --json <file>\t\tSpecify the output file for the SigSpec JSON document." + Environment.NewLine +
                                     "  -c, --csharp <file>\t\tSpecify the output file for the C# clients." + Environment.NewLine +
                                     "  -t, --typescript <file>\tSpecify the output file for the TypeScript clients." + Environment.NewLine +
-                                    "  --namespace <namespace>\tSpecify the namespace for the C# clients." + Environment.NewLine +
+                                    "  -k, --keep <key=value1,value2,...>\tSpecify the properties to keep in specified class in the SigSpec JSON document." + Environment.NewLine +
+                                    "  -n, --namespace <namespace>\tSpecify the namespace for the C# clients." + Environment.NewLine +
+                                    "  --replaceUlong <type1,type2,...>\tSpecify the types to replace ulong with string." + Environment.NewLine +
                                     "" + Environment.NewLine +
                                     "Arguments:" + Environment.NewLine +
                                     "  target\t\t\t\tSpecify the library files to process. If no assembly option is specified, " + Environment.NewLine +
