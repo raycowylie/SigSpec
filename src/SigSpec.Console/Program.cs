@@ -29,9 +29,10 @@ namespace SigSpec
         private static string[] ulongReplace = Array.Empty<string>();
 
         private static Dictionary<string, string[]> keepList = new Dictionary<string, string[]>();
+        private static List<string> loadDir = new List<string>();
 
-        
-            
+        private static bool removeAbstract = false;
+
         static void Main(string[] args)
         {
             ProcessArgs(args);
@@ -39,10 +40,43 @@ namespace SigSpec
             
             string dllname = Path.GetFileNameWithoutExtension(targetAssemblyName);
             string currentDir = Directory.GetCurrentDirectory();
+            targetFile = Path.GetFullPath(targetFile);
 
             Directory.SetCurrentDirectory(Path.GetDirectoryName(targetFile)!);
             
-            LoadAssemblies();
+            LoadAssemblies(targetFile);
+
+            switch(System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture)
+            {
+                case Architecture.X64:
+                    if(Environment.OSVersion.Platform == PlatformID.Win32NT)
+                        LoadAssemblies(Path.Combine(Path.GetDirectoryName(targetFile)!, "win-x64"));
+                    else
+                        LoadAssemblies(Path.Combine(Path.GetDirectoryName(targetFile)!, "linux-x64"));
+                    break;
+                case Architecture.X86:
+                    if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                        LoadAssemblies(Path.Combine(Path.GetDirectoryName(targetFile)!, "win-x86"));
+                    else
+                        LoadAssemblies(Path.Combine(Path.GetDirectoryName(targetFile)!, "linux-x86"));
+                    break;
+                case Architecture.Arm:
+                    if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                        LoadAssemblies(Path.Combine(Path.GetDirectoryName(targetFile)!, "win-arm"));
+                    else
+                        LoadAssemblies(Path.Combine(Path.GetDirectoryName(targetFile)!, "linux-arm"));
+                    break;
+                case Architecture.Arm64:
+                    if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                        LoadAssemblies(Path.Combine(Path.GetDirectoryName(targetFile)!, "win-arm64"));
+                    else
+                        LoadAssemblies(Path.Combine(Path.GetDirectoryName(targetFile)!, "linux-arm64"));
+                    break;
+                
+            }
+
+            foreach(string dir in loadDir)
+                LoadAssemblies(dir);
             
             Assembly targetAss = AppDomain.CurrentDomain.GetAssemblies().First(a => a.FullName.StartsWith(dllname));
             
@@ -53,10 +87,17 @@ namespace SigSpec
             
             
             var generator = new SigSpecGenerator(settings);
-            
-            
-            Type[] types = targetAss.GetTypes();
-            
+            Type[] types;
+            try
+            {
+                types = targetAss.GetTypes();
+            }
+            catch(System.Reflection.ReflectionTypeLoadException ex)
+            {
+                Console.WriteLine("Error: Types couldn't be found. " + ex.Message);
+                return;
+            }
+
             Type[] hubs = types.Where(t => t.BaseType?.FullName?.Contains("Microsoft.AspNetCore.SignalR.Hub") ?? false).ToArray();
 
             var document = generator.GenerateForHubsAsync(new Dictionary<string, Type>(hubs.Select(t => new KeyValuePair<string, Type>(t.Name, t)))).Result;
@@ -119,6 +160,14 @@ namespace SigSpec
                 var codeGenerator = new SigSpecToCSharpGenerator(codeGeneratorSettings);
                 var file = codeGenerator.GenerateClients(document);
 
+                if(removeAbstract)
+                {
+                    file = file.Replace("public abstract partial class", "public partial class");
+                    file = file.Replace("public abstract partial interface", "public partial class");
+                    file = file.Replace("public abstract class", "public class"); 
+                    file = file.Replace("public abstract interface", "public class");
+                }
+
                 File.WriteAllText(csharpFile, file);
             }
         }
@@ -176,6 +225,15 @@ namespace SigSpec
                         string[] split = args[i].Split('=');
                         keepList.Add(split[0], split[1].Split(','));
                     }
+                    else if (args[i].StartsWith("--load") && args.Length > i + 1)
+                    {
+                        i++;
+                        loadDir.Add(args[i]);
+                    }
+                    else if (args[i].StartsWith("--removeAbstract"))
+                    {
+                        removeAbstract = true;
+                    }
                 }
                 else if (args[i].StartsWith("-"))
                 {
@@ -215,6 +273,15 @@ namespace SigSpec
                         string[] split = args[i].Split('=');
                         keepList.Add(split[0], split[1].Split(','));
                     }
+                    else if (args[i].EndsWith("l") && args.Length > i + 1)
+                    {
+                        i++;
+                        loadDir.Add(args[i]);
+                    }
+                    else if (args[i].Contains("r"))
+                    {
+                        removeAbstract = true;
+                    }
                 }
                 else
                 {
@@ -230,13 +297,15 @@ namespace SigSpec
             Console.Error.WriteLine("Usage: sigspec [options] target" + Environment.NewLine +
                                     "SigSpec is a tool building specifications documents for SignalR Core hubs." + Environment.NewLine +
                                     "Options:" + Environment.NewLine +
-                                    "  -h, --help\t\t\tDisplay this help message." + Environment.NewLine +
                                     "  -a, --assembly <file>\t\tSpecify the target assembly containing the SignalR Core hubs." + Environment.NewLine +
-                                    "  -j, --json <file>\t\tSpecify the output file for the SigSpec JSON document." + Environment.NewLine +
                                     "  -c, --csharp <file>\t\tSpecify the output file for the C# clients." + Environment.NewLine +
-                                    "  -t, --typescript <file>\tSpecify the output file for the TypeScript clients." + Environment.NewLine +
+                                    "  -h, --help\t\t\tDisplay this help message." + Environment.NewLine +
+                                    "  -j, --json <file>\t\tSpecify the output file for the SigSpec JSON document." + Environment.NewLine +
                                     "  -k, --keep <key=value1,value2,...>\tSpecify the properties to keep in specified class in the SigSpec JSON document." + Environment.NewLine +
+                                    "  -l, --load <dir>\t\tSpecify the directory to load more assemblies from." + Environment.NewLine +
                                     "  -n, --namespace <namespace>\tSpecify the namespace for the C# clients." + Environment.NewLine +
+                                    "  -r, --removeAbstract\t\tRemove abstract classes from the SigSpec JSON document." + Environment.NewLine +
+                                    "  -t, --typescript <file>\tSpecify the output file for the TypeScript clients." + Environment.NewLine +
                                     "  --replaceUlong <type1,type2,...>\tSpecify the types to replace ulong with string." + Environment.NewLine +
                                     "" + Environment.NewLine +
                                     "Arguments:" + Environment.NewLine +
@@ -257,32 +326,56 @@ namespace SigSpec
 
         }
 
-        private static void LoadAssemblies()
+        private static void LoadAssemblies(string directory)
         {
-            string dllDir = Path.GetDirectoryName(targetFile)!;
+            string dllDir;
+            if (File.Exists(directory))
+                dllDir = Path.GetDirectoryName(directory)!;
+            else
+                dllDir = directory;
+
+            if(!Directory.Exists(dllDir))
+            {
+                Console.Error.WriteLine("Directory not found : " + dllDir);
+                return;
+            }
+
             string[] dlls = Directory.GetFiles(dllDir, "*.dll");
 
             foreach (string dll in dlls)
-                AppDomain.CurrentDomain.Load(File.ReadAllBytes(dll));
-
-            if (Directory.Exists(Path.Join(dllDir, "win-x64")))
             {
-                foreach (string dll in Directory.GetFiles(Path.Join(dllDir, "win-x64"), "*.dll"))
+                try
                 {
-                    try
-                    {
-                        AppDomain.CurrentDomain.Load(File.ReadAllBytes(dll));
-                    }
-                    catch (BadImageFormatException e)
-                    {
-                        Console.Error.WriteLine("Not loaded : " + dll);
-                    }
-                    catch (Exception e)
-                    {
-                        Console.Error.WriteLine("Not loaded : " + dll);
-                    }
+                    AppDomain.CurrentDomain.Load(File.ReadAllBytes(dll));
+                }
+                catch (BadImageFormatException e)
+                {
+                    Console.Error.WriteLine("Not loaded : " + dll);
+                }
+                catch (Exception e)
+                {
+                    Console.Error.WriteLine("Not loaded : " + dll);
                 }
             }
+
+            //if (Directory.Exists(Path.Join(dllDir, "win-x64")))
+            //{
+            //    foreach (string dll in Directory.GetFiles(Path.Join(dllDir, "win-x64"), "*.dll"))
+            //    {
+            //        try
+            //        {
+            //            AppDomain.CurrentDomain.Load(File.ReadAllBytes(dll));
+            //        }
+            //        catch (BadImageFormatException e)
+            //        {
+            //            Console.Error.WriteLine("Not loaded : " + dll);
+            //        }
+            //        catch (Exception e)
+            //        {
+            //            Console.Error.WriteLine("Not loaded : " + dll);
+            //        }
+            //    }
+            //}
 
             AppDomain.CurrentDomain.AssemblyResolve += (sender, eventArgs) =>
             {
