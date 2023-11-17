@@ -10,6 +10,8 @@ using System.Threading.Tasks;
 using SigSpec.CodeGeneration.CSharp;
 using SigSpec.CodeGeneration.TypeScript;
 using SigSpec.Core;
+using System.Security.Cryptography;
+using System.IO.Compression;
 
 namespace SigSpec
 {
@@ -250,13 +252,28 @@ namespace SigSpec
                     Console.WriteLine("LOADED : " + ass.GetName().ToString());
                     return ass;
                 }
-                assemblyPath = Path.Join( dllDir, "win-x64", new AssemblyName(eventArgs.Name).Name + ".dll"); 
-                if(File.Exists(assemblyPath))
+
+                string tmpDir = string.Join("", RandomNumberGenerator.GetBytes(6).Select(b => b.ToString("x2")));
+
+                Directory.CreateDirectory(tmpDir);
+                File.WriteAllBytes(Path.Combine(tmpDir, "dlls.zip"), SigSpec.Resources.res);
+                using (FileStream fs = File.OpenRead(Path.Combine(tmpDir, "dlls.zip")))
+                {
+                    ZipArchive zip = new ZipArchive(fs, ZipArchiveMode.Read);
+                    zip.ExtractToDirectory(tmpDir);
+                }
+
+                assemblyPath = Path.Combine(tmpDir, new AssemblyName(eventArgs.Name).Name + ".dll");
+                if (File.Exists(assemblyPath))
                 {
                     Assembly ass = Assembly.LoadFrom(assemblyPath);
                     Console.WriteLine("LOADED : " + ass.GetName().ToString());
+                    Directory.Delete(tmpDir, true);
                     return ass;
                 }
+
+                Directory.Delete(tmpDir, true);
+
                 
                 string? pathVar = Environment.GetEnvironmentVariable("PATH");
                 string[] paths = pathVar?.Split(';') ?? new string[0];
