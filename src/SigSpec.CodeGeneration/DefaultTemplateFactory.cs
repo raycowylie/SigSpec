@@ -6,7 +6,7 @@ namespace SigSpec.CodeGeneration
 {
     public class DefaultTemplateFactory : NJsonSchema.CodeGeneration.DefaultTemplateFactory
     {
-        public DefaultTemplateFactory(CodeGeneratorSettingsBase settings, Assembly[] assemblies) 
+        public DefaultTemplateFactory(CodeGeneratorSettingsBase settings, Assembly[] assemblies)
             : base(settings, assemblies)
         {
         }
@@ -17,14 +17,16 @@ namespace SigSpec.CodeGeneration
         /// <returns>The template.</returns>
         protected override string GetEmbeddedLiquidTemplate(string language, string template)
         {
-            var assembly = Assembly.Load(new AssemblyName("SigSpec.CodeGeneration." + language));
-            var resourceName = "SigSpec.CodeGeneration." + language + ".Templates." + template + ".liquid";
+            Assembly assembly = Assembly.Load(new AssemblyName("SigSpec.CodeGeneration." + language));
+            string resourceName = "SigSpec.CodeGeneration." + language + ".Templates." + template + ".liquid";
 
-            var resource = assembly.GetManifestResourceStream(resourceName);
+            Stream resource = assembly.GetManifestResourceStream(resourceName);
             if (resource != null)
             {
-                using (var reader = new StreamReader(resource))
+                using (StreamReader reader = new StreamReader(resource))
+                {
                     return reader.ReadToEnd();
+                }
             }
 
             return base.GetEmbeddedLiquidTemplate(language, template);

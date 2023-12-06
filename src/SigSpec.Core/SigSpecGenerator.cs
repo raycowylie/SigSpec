@@ -1,14 +1,14 @@
-﻿using Microsoft.AspNetCore.SignalR;
-using NJsonSchema;
-using NJsonSchema.Generation;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.SignalR;
 using Namotion.Reflection;
+using NJsonSchema;
+using NJsonSchema.Generation;
 
 namespace SigSpec.Core
 {
@@ -21,44 +21,46 @@ namespace SigSpec.Core
             _settings = settings;
         }
 
-        public async Task<SigSpecDocument> GenerateForHubsAsync(IReadOnlyDictionary<string, Type> hubs)
+        public SigSpecDocument GenerateForHubsAsync(IReadOnlyDictionary<string, Type> hubs)
         {
-            var document = new SigSpecDocument();
-            return await GenerateForHubsAsync(hubs, document);
+            SigSpecDocument document = new SigSpecDocument();
+            return GenerateForHubs(hubs, document);
         }
 
-        public async Task<SigSpecDocument> GenerateForHubsAsync(IReadOnlyDictionary<string, Type> hubs, SigSpecDocument template)
+        public SigSpecDocument GenerateForHubs(IReadOnlyDictionary<string, Type> hubs, SigSpecDocument template)
         {
-            var document = template;
-            var resolver = new SigSpecSchemaResolver(document, _settings);
-            var generator = new JsonSchemaGenerator(_settings);
+            SigSpecDocument document = template;
+            SigSpecSchemaResolver resolver = new SigSpecSchemaResolver(document, _settings);
+            JsonSchemaGenerator generator = new JsonSchemaGenerator(_settings);
 
-            foreach (var h in hubs)
+            foreach (KeyValuePair<string, Type> h in hubs)
             {
-                var type = h.Value;
+                Type type = h.Value;
 
-                var hub = new SigSpecHub();
-                hub.Name = type.Name.EndsWith("Hub") ? type.Name.Substring(0, type.Name.Length - 3) : type.Name;
-                hub.Description = type.GetXmlDocsSummary();
-
-                foreach (var method in GetOperationMethods(type))
+                SigSpecHub hub = new SigSpecHub
                 {
-                    var operation = await GenerateOperationAsync(type, method, generator, resolver, SigSpecOperationType.Sync);
+                    Name = type.Name.EndsWith("Hub") ? type.Name.Substring(0, type.Name.Length - 3) : type.Name,
+                    Description = type.GetXmlDocsSummary()
+                };
+
+                foreach (MethodInfo method in GetOperationMethods(type))
+                {
+                    SigSpecOperation operation = GenerateOperation(type, method, generator, resolver, SigSpecOperationType.Sync);
                     hub.Operations[method.Name] = operation;
                 }
 
-                foreach (var method in GetChannelMethods(type))
+                foreach (MethodInfo method in GetChannelMethods(type))
                 {
-                    hub.Operations[method.Name] = await GenerateOperationAsync(type, method, generator, resolver, SigSpecOperationType.Observable);
+                    hub.Operations[method.Name] = GenerateOperation(type, method, generator, resolver, SigSpecOperationType.Observable);
                 }
 
-                var baseTypeGenericArguments = type.BaseType.GetGenericArguments();
+                Type[] baseTypeGenericArguments = type.BaseType.GetGenericArguments();
                 if (baseTypeGenericArguments.Length == 1)
                 {
-                    var callbackType = baseTypeGenericArguments[0];
-                    foreach (var callbackMethod in GetOperationMethods(callbackType))
+                    Type callbackType = baseTypeGenericArguments[0];
+                    foreach (MethodInfo callbackMethod in GetOperationMethods(callbackType))
                     {
-                        var callback = await GenerateOperationAsync(type, callbackMethod, generator, resolver, SigSpecOperationType.Sync);
+                        SigSpecOperation callback = GenerateOperation(type, callbackMethod, generator, resolver, SigSpecOperationType.Sync);
                         hub.Callbacks[callbackMethod.Name] = callback;
                     }
                 }
@@ -74,7 +76,7 @@ namespace SigSpec.Core
         {
             return type.GetTypeInfo().GetRuntimeMethods().Where(m =>
             {
-                var returnsChannelReader =
+                bool returnsChannelReader =
                     m.ReturnType.IsGenericType &&
                     (m.ReturnType.GetGenericTypeDefinition() == typeof(ChannelReader<>) ||
                      m.ReturnType.GetGenericTypeDefinition().IsAssignableToTypeName("IAsyncEnumerable`1", TypeNameStyle.Name));
@@ -94,7 +96,7 @@ namespace SigSpec.Core
         {
             return type.GetTypeInfo().GetRuntimeMethods().Where(m =>
             {
-                var returnsChannelReader =
+                bool returnsChannelReader =
                     m.ReturnType.IsGenericType &&
                     (m.ReturnType.GetGenericTypeDefinition() == typeof(ChannelReader<>) ||
                      m.ReturnType.GetGenericTypeDefinition().IsAssignableToTypeName("IAsyncEnumerable`1", TypeNameStyle.Name));
@@ -110,17 +112,17 @@ namespace SigSpec.Core
             });
         }
 
-        private async Task<SigSpecOperation> GenerateOperationAsync(Type type, MethodInfo method, JsonSchemaGenerator generator, SigSpecSchemaResolver resolver, SigSpecOperationType operationType)
+        private SigSpecOperation GenerateOperation(Type type, MethodInfo method, JsonSchemaGenerator generator, SigSpecSchemaResolver resolver, SigSpecOperationType operationType)
         {
-            var operation = new SigSpecOperation
+            SigSpecOperation operation = new SigSpecOperation
             {
                 Description = method.GetXmlDocsSummary(),
                 Type = operationType
             };
 
-            foreach (var arg in method.GetParameters().Where(param => param.ParameterType != typeof(CancellationToken)))
+            foreach (ParameterInfo arg in method.GetParameters().Where(param => param.ParameterType != typeof(CancellationToken)))
             {
-                var parameter = generator.GenerateWithReferenceAndNullability<SigSpecParameter>(
+                SigSpecParameter parameter = generator.GenerateWithReferenceAndNullability<SigSpecParameter>(
                     arg.ParameterType.ToContextualType(), arg.ParameterType.ToContextualType().IsNullableType, resolver, (p, s) =>
                     {
                         p.Description = arg.GetXmlDocs();
@@ -129,7 +131,7 @@ namespace SigSpec.Core
                 operation.Parameters[arg.Name] = parameter;
             }
 
-            var returnType =
+            Type returnType =
                 operationType == SigSpecOperationType.Observable
                     ? method.ReturnType.GetGenericArguments().First()
                 : method.ReturnType == typeof(Task)
@@ -139,7 +141,7 @@ namespace SigSpec.Core
                     : method.ReturnType;
 
             operation.ReturnType = returnType == null ? null : generator.GenerateWithReferenceAndNullability<JsonSchema>(
-                returnType.ToContextualType(), returnType.ToContextualType().IsNullableType, resolver, async (p, s) =>
+                returnType.ToContextualType(), returnType.ToContextualType().IsNullableType, resolver, (p, s) =>
                 {
                     string returnDescr = method.GetXmlDocsTag("returns");
                     p.Description = method.ReturnType.GetXmlDocsSummary();
@@ -147,7 +149,7 @@ namespace SigSpec.Core
                     {
                         p.Description = returnDescr;
                     }
-                    
+
                 });
 
             return operation;

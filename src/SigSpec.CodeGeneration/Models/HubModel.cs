@@ -1,7 +1,7 @@
-﻿using NJsonSchema.CodeGeneration;
-using SigSpec.Core;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using NJsonSchema.CodeGeneration;
+using SigSpec.Core;
 
 namespace SigSpec.CodeGeneration.Models
 {

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using NJsonSchema.CodeGeneration;
+﻿using NJsonSchema.CodeGeneration;
 
 namespace SigSpec.CodeGeneration
 {

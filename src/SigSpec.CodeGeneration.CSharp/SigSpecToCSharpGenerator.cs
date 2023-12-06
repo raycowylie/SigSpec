@@ -19,36 +19,36 @@ namespace SigSpec.CodeGeneration.CSharp
 
         public IEnumerable<CodeArtifact> GenerateArtifacts(SigSpecDocument document)
         {
-            var resolver = new CSharpTypeResolver(_settings.CSharpGeneratorSettings);
+            CSharpTypeResolver resolver = new CSharpTypeResolver(_settings.CSharpGeneratorSettings);
             resolver.RegisterSchemaDefinitions(document.Definitions);
 
-            var artifacts = new List<CodeArtifact>();
-            foreach (var hub in document.Hubs)
+            List<CodeArtifact> artifacts = new List<CodeArtifact>();
+            foreach (KeyValuePair<string, SigSpecHub> hub in document.Hubs)
             {
-                var hubModel = new HubModel(hub.Key, hub.Value, resolver);
-                var template = _settings.CSharpGeneratorSettings.TemplateFactory.CreateTemplate("CSharp", "Hub", hubModel);
+                HubModel hubModel = new HubModel(hub.Key, hub.Value, resolver);
+                ITemplate template = _settings.CSharpGeneratorSettings.TemplateFactory.CreateTemplate("CSharp", "Hub", hubModel);
                 artifacts.Add(new CodeArtifact(hubModel.Name, CodeArtifactType.Class, CodeArtifactLanguage.CSharp, CodeArtifactCategory.Client, template.Render()));
             }
 
             if (_settings.GenerateDtoTypes)
             {
-                var generator = new CSharpGenerator(document, _settings.CSharpGeneratorSettings, resolver);
-                var types = generator.GenerateTypes();
+                CSharpGenerator generator = new CSharpGenerator(document, _settings.CSharpGeneratorSettings, resolver);
+                IEnumerable<CodeArtifact> types = generator.GenerateTypes();
                 return artifacts.Concat(types);
             }
             else
             {
-                var generator = new CSharpGenerator(document, _settings.CSharpGeneratorSettings, resolver);
+                CSharpGenerator generator = new CSharpGenerator(document, _settings.CSharpGeneratorSettings, resolver);
                 return artifacts.Concat(generator.GenerateTypes());
             }
         }
 
         public string GenerateClients(SigSpecDocument document)
         {
-            var artifacts = GenerateArtifacts(document);
+            IEnumerable<CodeArtifact> artifacts = GenerateArtifacts(document);
 
-            var fileModel = new FileModel(artifacts.Select(a => a.Code), _settings.CSharpGeneratorSettings.Namespace);
-            var fileTemplate = _settings.CSharpGeneratorSettings.TemplateFactory.CreateTemplate("CSharp", "File", fileModel);
+            FileModel fileModel = new FileModel(artifacts.Select(a => a.Code), _settings.CSharpGeneratorSettings.Namespace);
+            ITemplate fileTemplate = _settings.CSharpGeneratorSettings.TemplateFactory.CreateTemplate("CSharp", "File", fileModel);
 
             return fileTemplate.Render();
         }
