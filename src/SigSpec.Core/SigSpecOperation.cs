@@ -1,7 +1,6 @@
-﻿using Newtonsoft.Json;
+﻿using System.Collections.Generic;
+using Newtonsoft.Json;
 using NJsonSchema;
-using System.Collections.Generic;
-using System;
 
 namespace SigSpec.Core
 {

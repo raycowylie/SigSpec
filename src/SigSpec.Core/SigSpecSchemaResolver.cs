@@ -1,7 +1,6 @@
-﻿using NJsonSchema;
+﻿using System;
+using NJsonSchema;
 using NJsonSchema.Generation;
-using System;
-using System.Linq;
 
 namespace SigSpec.Core
 {
@@ -10,7 +9,7 @@ namespace SigSpec.Core
         private readonly SigSpecDocument _document;
         private readonly JsonSchemaGeneratorSettings _settings;
 
-        public SigSpecSchemaResolver(SigSpecDocument document, SigSpecGeneratorSettings settings) 
+        public SigSpecSchemaResolver(SigSpecDocument document, SigSpecGeneratorSettings settings)
             : base(document, settings)
         {
             _document = document;
@@ -22,17 +21,26 @@ namespace SigSpec.Core
             // TODO: JsonSchemaResolver should use new IDefinitionsObject interface and not JsonSchema
 
             if (schema == null)
+            {
                 throw new ArgumentNullException(nameof(schema));
+            }
+
             if (schema == RootObject)
+            {
                 throw new ArgumentException("The root schema cannot be appended.");
+            }
 
             if (!_document.Definitions.Values.Contains(schema))
             {
-                var typeName = _settings.TypeNameGenerator.Generate(schema, typeNameHint, _document.Definitions.Keys);
+                string typeName = _settings.TypeNameGenerator.Generate(schema, typeNameHint, _document.Definitions.Keys);
                 if (!string.IsNullOrEmpty(typeName) && !_document.Definitions.ContainsKey(typeName))
+                {
                     _document.Definitions[typeName] = schema;
+                }
                 else
+                {
                     _document.Definitions["ref_" + Guid.NewGuid().ToString().Replace("-", "_")] = schema;
+                }
             }
         }
     }
