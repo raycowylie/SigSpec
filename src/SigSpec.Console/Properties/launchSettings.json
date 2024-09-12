@@ -1,9 +1,14 @@
 {
   "profiles": {
-    "SigSpec.Console": {
+    "SigSpec - SC195012": {
       "commandName": "Project",
-      "commandLineArgs": "sigspec \r\n-a RaycoWylie.Communication.SuperDoer.Server \r\n-j D:\\workingdir\\newgen\\code\\git\\superdoer\\SuperDoer\\protocol/SuperDoerClient.json \r\n-c D:\\workingdir\\newgen\\code\\git\\superdoer\\SuperDoer\\protocol/SuperDoerClient.cs \r\n--namespace SuperDoer.Test.Client D:\\workingdir\\newgen\\code\\git\\superdoer\\SuperDoer\\SuperDoer\\bin\\Debug\\net6.0\\/",
-      "workingDirectory": "D:\\workingdir\\newgen\\code\\git\\demo-comansa\\Protocol"
+      "commandLineArgs": "sigspec \r\n-a RaycoWylie.Server.FlatTopTC\r\n-j \"C:\\workingdir\\i5000\\SC195012 - Comansa Standard FT-TC\\protocol\\specs.json\" \r\n-c \"C:\\workingdir\\i5000\\SC195012 - Comansa Standard FT-TC\\protocol\\client.cs\"\r\n-t \"C:\\workingdir\\i5000\\SC195012 - Comansa Standard FT-TC\\protocol\\client.ts\"\r\n--namespace RaycoWylie.Server.FlatTopTC.Test \r\n--keep-properties RSimplified[objectValue,stringID,properties]\r\n--remove-type int64[DiagSensor,DiagItem]\r\n\"C:\\workingdir\\i5000\\SC195012 - Comansa Standard FT-TC\\RaycoWylie.Server.FlatTopTC\\bin\\Debug\\net8.0\\RaycoWylie.Server.FlatTopTC.dll\"\r\n",
+      "workingDirectory": "C:\\workingdir\\i5000\\SC195012 - Comansa Standard FT-TC\\Protocol"
+    },
+    "SigSpec - superdoer": {
+      "commandName": "Project",
+      "commandLineArgs": "sigspec \r\n-a RaycoWylie.Communication.SuperDoer.Server \r\n-j C:\\workingdir\\i5000\\superdoer\\SuperDoer\\protocol/SuperDoerClient.json \r\n-c C:\\workingdir\\i5000\\superdoer\\SuperDoer\\protocol/SuperDoerClient.cs \r\n--namespace SuperDoer.Test.Client C:\\workingdir\\i5000\\superdoer\\SuperDoer\\SuperDoer\\bin\\Release\\net8.0\\/",
+      "workingDirectory": "C:\\workingdir\\i5000\\superdoer\\SuperDoer\\Protocol"
     }
   }
 }
