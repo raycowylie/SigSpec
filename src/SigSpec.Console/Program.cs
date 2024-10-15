@@ -64,8 +64,26 @@ namespace SigSpec
 
             var document = generator.GenerateForHubsAsync(new Dictionary<string, Type>(hubs.Select(t => new KeyValuePair<string, Type>(t.Name, t))));
 
-            Directory.SetCurrentDirectory(currentDir);
+            //On retire les noms de classe qui contiennent des ` pour éviter les erreurs de génération de code.
+            //Normalement ce nom provient d'une classe générique. Juste retire ce qui suit le ` devrait suffire.
+            List<KeyValuePair<string,SigSpecHub>> invalideHubs = new ();
+            foreach (var hub in document.Hubs)
+            {
+                if (hub.Value.Name.Contains('`'))
+                {
+                    hub.Value.Name = hub.Value.Name[0..hub.Value.Name.IndexOf('`')];
+                    invalideHubs.Add(hub);
+                }
+            }
+            //Comme on se fit au nom de la clé, il faut retirer les anciennes clés et ajouter les nouvelles.
+            foreach (var hub in invalideHubs)
+            {
+                document.Hubs.Remove(hub.Key);
+                document.Hubs.Add(hub.Value.Name, hub.Value);
+            }
 
+
+            Directory.SetCurrentDirectory(currentDir);
 
             foreach (string item in removeProperties)
             {
@@ -330,7 +348,7 @@ namespace SigSpec
                 if (File.Exists(assemblyPath))
                 {
                     ass = Assembly.LoadFile(assemblyPath);
-                    Console.WriteLine(ass.GetName().ToString() + "\t" + ass.);
+                    Console.WriteLine(ass.GetName().ToString() + "\t" + ass.Location);
                     Console.WriteLine("\t\tLOADED");
                     return ass;
                 }
