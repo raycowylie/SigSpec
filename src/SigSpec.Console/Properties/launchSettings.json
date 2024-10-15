@@ -9,6 +9,11 @@
       "commandName": "Project",
       "commandLineArgs": "sigspec \r\n-a RaycoWylie.Communication.SuperDoer.Server \r\n-j C:\\workingdir\\i5000\\superdoer\\SuperDoer\\protocol/SuperDoerClient.json \r\n-c C:\\workingdir\\i5000\\superdoer\\SuperDoer\\protocol/SuperDoerClient.cs \r\n--namespace SuperDoer.Test.Client C:\\workingdir\\i5000\\superdoer\\SuperDoer\\SuperDoer\\bin\\Release\\net8.0\\/",
       "workingDirectory": "C:\\workingdir\\i5000\\superdoer\\SuperDoer\\Protocol"
+    },
+    "SigSpec - CommonHub": {
+      "commandName": "Project",
+      "commandLineArgs": "-a RaycoWylie.Server \r\n-j C:\\workingdir\\i5000\\base-systems\\RaycoWylie.Server\\protocol\\ServerTestClient.json \r\n-c C:\\workingdir\\i5000\\base-systems\\RaycoWylie.Server\\protocol\\ServerTestClient.cs \r\n--namespace RayccoWylie.Server.Test.Client \r\nC:\\workingdir\\i5000\\base-systems\\RaycoWylie.Server\\bin\\Release\\net8.0\\RaycoWylie.Server.dll",
+      "workingDirectory": "C:\\workingdir\\i5000\\base-systems\\RaycoWylie.Server\\protocol"
     }
   }
 }
