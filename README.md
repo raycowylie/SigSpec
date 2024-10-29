@@ -1,230 +1,65 @@
 # SigSpec for SignalR Core
+Forked from https://github.com/RicoSuter/SigSpec
 
-[![Azure DevOps](https://img.shields.io/azure-devops/build/rsuter/Namotion/22/master.svg)](https://dev.azure.com/rsuter/Namotion/_build?definitionId=22)
-[![Azure DevOps](https://img.shields.io/azure-devops/coverage/rsuter/Namotion/22/master.svg)](https://dev.azure.com/rsuter/Namotion/_build?definitionId=22)
-[![Nuget](https://img.shields.io/nuget/v/SigSpec.Core.svg)](https://www.nuget.org/packages?q=sigspec)
+Modified to be used as a CLI.
 
-**Experimental API endpoint specification** and code generator for [SignalR Core](https://github.com/aspnet/SignalR).
+## How to use
+ - Build SigSpec/src/SigSpec.Console project
+ - Publish
+ - Add exe to the PATH
 
-Run SigSpec.Console to see a demo spec and the generated TypeScript code.
-
-**Please let me know what you think [here](https://github.com/RSuter/SigSpec/issues/1).**
-
-Based on [NJsonSchema](http://njsonschema.org) (see also: [NSwag](http://nswag.org)).
-
-Original idea: https://github.com/RSuter/NSwag/issues/691
-
-## Sample
-
-Hub: 
-
-```csharp
-public class ChatHub : Hub<IChatClient>
-{
-    public Task Send(string message)
-    {
-        if (message == string.Empty)
-        {
-            return Clients.All.Welcome();
-        }
-
-        return Clients.All.Send(message);
-    }
-
-    public Task AddPerson(Person person)
-    {
-        return Task.CompletedTask;
-    }
-
-    public ChannelReader<Event> GetEvents()
-    {
-        var channel = Channel.CreateUnbounded<Event>();
-        return channel.Reader;
-    }
-}
-
-public class Event
-{
-    public string Type { get; set; }
-}
-
-public class Person
-{
-    [JsonProperty("firstName")]
-    public string FirstName { get; set; }
-
-    [JsonProperty("lastName")]
-    public string LastName { get; set; }
-}
-
-public interface IChatClient
-{
-    Task Welcome();
-
-    Task Send(string message);
-}
 ```
+Usage: sigspec [options] target
+SigSpec is a tool building specifications documents for SignalR Core hubs.
+Options:
+  -h, --help                    Display this help message.
+  -a, --assembly <file>         Specify the target assembly containing the SignalR Core hubs.
+  -j, --json <file>             Specify the output file for the SigSpec JSON document.
+  -c, --csharp <file>           Specify the output file for the C# clients.
+  -t, --typescript <file>       Specify the output file for the TypeScript clients.
+  -r, --remove-properties               Properties to remove.
+  --keep-properties             Properties to keep in a specific class. Ex: RaycoWylie.Data.Types.RSimplified[objectValue,stringID,properties]
+  --remove-type         Types to remove from class. Ex: UInt64[DiagSensor,DiagItem]
+  --namespace <namespace>       Specify the namespace for the C# clients.
 
-Generated spec: 
+Arguments:
+  target                                Specify the library files to process. If no assembly option is specified,
+                                        the target name, without extension, is used.
 
-```json
-{
-  "hubs": {
-    "chat": {
-      "name": "Chat",
-      "description": "",
-      "operations": {
-        "Send": {
-          "description": "",
-          "parameters": {
-            "message": {
-              "type": [
-                "null",
-                "string"
-              ],
-              "description": ""
-            }
-          }
-        },
-        "AddPerson": {
-          "description": "",
-          "parameters": {
-            "person": {
-              "description": "",
-              "oneOf": [
-                {
-                  "type": "null"
-                },
-                {
-                  "$ref": "#/definitions/Person"
-                }
-              ]
-            }
-          }
-        },
-        "GetEvents": {
-          "description": "",
-          "parameters": {},
-          "returntype": {
-            "description": "",
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/definitions/Event"
-              }
-            ]
-          },
-          "type": "Observable"
-        }
-      },
-      "callbacks": {
-        "Welcome": {
-          "description": "",
-          "parameters": {}
-        },
-        "Send": {
-          "description": "",
-          "parameters": {
-            "message": {
-              "type": [
-                "null",
-                "string"
-              ],
-              "description": ""
-            }
-          }
-        }
-      }
-    }
-  },
-  "definitions": {
-    "Person": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "firstName": {
-          "type": [
-            "null",
-            "string"
-          ]
-        },
-        "lastName": {
-          "type": [
-            "null",
-            "string"
-          ]
-        }
-      }
-    },
-    "Event": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "Type": {
-          "type": [
-            "null",
-            "string"
-          ]
-        }
-      }
-    }
-  }
-}
+Output:
+  If no output option is specified(json,csharp or typescript), the json output is written to the console.
+
+Examples:
+  sigspec -j sigspec.json -c sigspec.cs -t sigspec.ts controller.dll
+      Analyse controller.dll, using "controller" as the assembly name to search for SignalR Hubs.
+      Write the SigSpec JSON document to sigspec.json, the C# clients to sigspec.cs and the TypeScript clients to sigspec.ts.
+
+  sigspec -a RaycoWylie.Server.FlatTopTC controller.dll
+  ```
+
+## Use with Rayco projects
+Most project are already setup to compile the interfaces needed.
+Usually, adding something like this in the project do the trick:
+```xml
+
+    <Target Name="GenerateSpecs" AfterTargets="Build">
+        <MakeDir ContinueOnError="WarnAndContinue" Directories="$(ProjectDir)protocol" />
+
+        <Exec 
+            ContinueOnError="WarnAndContinue" 
+            Command="sigspec -a RaycoWylie.Server ^
+                             -j $(ProjectDir)protocol/ServerTestClient.json ^
+                             -c $(ProjectDir)protocol/ServerTestClient.cs ^
+                             -t $(ProjectDir)protocol/ServerTestClient.ts ^
+                             --namespace RaycoWylie.Server.Test.Client ^
+                             --keep-properties RSimplified[objectValue,stringID,properties] ^
+                             --remove-type int64[DiagSensor,DiagItem] ^
+                             $(ProjectDir)$(OutDir)/RaycoWylie.Server.dll" />
+
+        <Copy ContinueOnError="WarnAndContinue" 
+              
+              SourceFiles="$(ProjectDir)protocol/ServerTestClient.cs" 
+              DestinationFiles="$(ProjectDir)/../RaycoWylie.Server.Test/ServerTestClient.cs" />
+
+    </Target>
 ```
-
-Generated TypeScript code: 
-
-```typescript
-import { HubConnection, IStreamResult } from "@aspnet/signalr"
-
-export class ChatHub {
-    constructor(private connection: HubConnection) {
-    }
-
-    send(message: string): Promise<void> {
-        return this.connection.invoke('Send', message);
-    }
-
-    addPerson(person: Person): Promise<void> {
-        return this.connection.invoke('AddPerson', person);
-    }
-
-    getEvents(): IStreamResult<Event> {
-        return this.connection.stream('GetEvents');
-    }
-
-    registerCallbacks(implementation: IChatHubCallbacks) {
-        this.connection.on('Welcome', () => implementation.welcome());
-        this.connection.on('Send', (message) => implementation.send(message));
-    }
-
-    unregisterCallbacks(implementation: IChatHubCallbacks) {
-        this.connection.off('Welcome', () => implementation.welcome());
-        this.connection.off('Send', (message) => implementation.send(message));
-    }
-}
-
-export interface IChatHubCallbacks {
-    welcome(): void;
-    send(message: string): void;
-}
-
-export interface Person {
-    firstName: string;
-    lastName: string;
-}
-
-export interface Event {
-    Type: string;
-}
-```
-
-# Development
-
-## Release new version
-
-1. Update versions with [dnt bump-versions patch](https://github.com/RicoSuter/DNT#bump-versions)
-2. Commit to "master" (via PR)
-3. Merge into "release" to start nuget.org publish (via PR)
