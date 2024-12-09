@@ -23,6 +23,7 @@ namespace SigSpec
         private static string? typescriptFile = null;
         private static string? targetAssemblyName = null;
         private static List<string> removeProperties = new List<string>();
+        private static List<string> removeClass = new List<string>();
         private static Dictionary<string,string[]> keepProperties = new ();
         private static Dictionary<string,string[]> removeTypes = new ();
 
@@ -84,6 +85,12 @@ namespace SigSpec
 
 
             Directory.SetCurrentDirectory(currentDir);
+
+            foreach (string item in removeClass)
+            {
+                if (document.Definitions.ContainsKey(item))
+                    document.Definitions.Remove(item);
+            }
 
             foreach (string item in removeProperties)
             {
@@ -150,12 +157,21 @@ namespace SigSpec
             if (csharpFile is not null)
             {
                 var codeGeneratorSettings = new SigSpecToCSharpGeneratorSettings();
+                
                 if (assemblyNamespace is not null)
                     codeGeneratorSettings.CSharpGeneratorSettings.Namespace = assemblyNamespace;
                 var codeGenerator = new SigSpecToCSharpGenerator(codeGeneratorSettings);
                 var file = codeGenerator.GenerateClients(document);
 
-                File.WriteAllText(csharpFile, file);
+                using StreamWriter sw = new StreamWriter(csharpFile, Encoding.UTF8, new FileStreamOptions() { Mode = FileMode.Create, Access = FileAccess.Write, Share = FileShare.ReadWrite });
+                string[] lines = file.Split("\n");
+                foreach (string line in lines)
+                {
+                    if (line.Contains("Newtonsoft"))
+                        continue;
+                    sw.WriteLine(line);
+                }
+                sw.Close();
             }
         }
 
@@ -205,6 +221,11 @@ namespace SigSpec
                     {
                         i++;
                         removeProperties.Add(args[i]);
+                    }
+                    else if (args[i].StartsWith("--remove-class"))
+                    {
+                        i++;
+                        removeClass.AddRange(args[i].Split(","));
                     }
                     else if (args[i].StartsWith("--keep-properties"))
                     {
@@ -277,6 +298,7 @@ namespace SigSpec
                                     "  -r, --remove-properties\t\tProperties to remove." + Environment.NewLine +
                                     "  --keep-properties\t\tProperties to keep in a specific class. Ex: RaycoWylie.Data.Types.RSimplified[objectValue,stringID,properties]" + Environment.NewLine +
                                     "  --remove-type\t\tTypes to remove from class. Ex: UInt64[DiagSensor,DiagItem]" + Environment.NewLine +
+                                    "  --remove-class\t\tClass or type to remove from output. Ex: MethodInfo,Delegate" + Environment.NewLine +
                                     "  --namespace <namespace>\tSpecify the namespace for the C# clients." + Environment.NewLine +
                                     "" + Environment.NewLine +
                                     "Arguments:" + Environment.NewLine +
