@@ -303,7 +303,20 @@ namespace SigSpec
             string[] dlls = Directory.GetFiles(dllDir, "*.dll");
 
             foreach (string dll in dlls)
-                AppDomain.CurrentDomain.Load(File.ReadAllBytes(dll));
+            {
+                try
+                {
+                    AppDomain.CurrentDomain.Load(File.ReadAllBytes(dll));
+                }
+                catch (BadImageFormatException e)
+                {
+                    Console.Error.WriteLine("Not loaded(image) : " + dll);
+                }
+                catch (Exception e)
+                {
+                    Console.Error.WriteLine("Not loaded : " + dll);
+                }
+            }
 
             //foreach (string dll in Directory.GetFiles(Path.Join(dllDir, "win-x64"), "*.dll"))
             //{
