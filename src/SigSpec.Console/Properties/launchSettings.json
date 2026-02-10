@@ -5,6 +5,11 @@
       "commandLineArgs": "sigspec \r\n-a RaycoWylie.Server.FlatTopTC\r\n-j \"C:\\workingdir\\i5000\\SC195012 - Comansa Standard FT-TC\\protocol\\specs.json\" \r\n-c \"C:\\workingdir\\i5000\\SC195012 - Comansa Standard FT-TC\\protocol\\client.cs\"\r\n-t \"C:\\workingdir\\i5000\\SC195012 - Comansa Standard FT-TC\\protocol\\client.ts\"\r\n--namespace RaycoWylie.Server.FlatTopTC.Test \r\n--keep-properties RSimplified[objectValue,stringID,properties]\r\n--remove-type int64[DiagSensor,DiagItem]\r\n\"C:\\workingdir\\i5000\\SC195012 - Comansa Standard FT-TC\\RaycoWylie.Server.FlatTopTC\\bin\\Debug\\net8.0\\RaycoWylie.Server.FlatTopTC.dll\"\r\n",
       "workingDirectory": "C:\\workingdir\\i5000\\SC195012 - Comansa Standard FT-TC\\Protocol"
     },
+    "SigSpec - SC192001": {
+      "commandName": "Project",
+      "commandLineArgs": "sigspec \r\n-a RaycoWylie.Server.FlatTopTC\r\n-j \"C:\\workingdir\\i5000\\SC195012 - Comansa Standard FT-TC\\protocol\\specs.json\" \r\n-c \"C:\\workingdir\\i5000\\SC195012 - Comansa Standard FT-TC\\protocol\\client.cs\"\r\n-t \"C:\\workingdir\\i5000\\SC195012 - Comansa Standard FT-TC\\protocol\\client.ts\"\r\n--namespace RaycoWylie.Server.FlatTopTC.Test \r\n--keep-properties RSimplified[objectValue,stringID,properties]\r\n--remove-type int64[DiagSensor,DiagItem]\r\n\"C:\\workingdir\\i5000\\SC195012 - Comansa Standard FT-TC\\RaycoWylie.Server.FlatTopTC\\bin\\Debug\\net8.0\\RaycoWylie.Server.FlatTopTC.dll\"\r\n",
+      "workingDirectory": "C:\\workingdir\\i5000\\SC195012 - Comansa Standard FT-TC\\Protocol"
+    },
     "SigSpec - superdoer": {
       "commandName": "Project",
       "commandLineArgs": "sigspec \r\n-a RaycoWylie.Communication.SuperDoer.Server \r\n-j C:\\workingdir\\i5000\\superdoer\\SuperDoer\\protocol/SuperDoerClient.json \r\n-c C:\\workingdir\\i5000\\superdoer\\SuperDoer\\protocol/SuperDoerClient.cs \r\n--namespace SuperDoer.Test.Client C:\\workingdir\\i5000\\superdoer\\SuperDoer\\SuperDoer\\bin\\Release\\net8.0\\/",
@@ -12,8 +17,8 @@
     },
     "SigSpec - CommonHub": {
       "commandName": "Project",
-      "commandLineArgs": "-a RaycoWylie.Server \r\n-j C:\\workingdir\\i5000\\base-systems\\RaycoWylie.Server\\protocol\\ServerTestClient.json \r\n-c C:\\workingdir\\i5000\\base-systems\\RaycoWylie.Server\\protocol\\ServerTestClient.cs \r\n--namespace RayccoWylie.Server.Test.Client \r\nC:\\workingdir\\i5000\\base-systems\\RaycoWylie.Server\\bin\\Release\\net8.0\\RaycoWylie.Server.dll",
-      "workingDirectory": "C:\\workingdir\\i5000\\base-systems\\RaycoWylie.Server\\protocol"
+      "commandLineArgs": "-a RaycoWylie.Server \r\n-j C:\\workingdir\\i5000\\base-systems\\RaycoWylie.Server\\protocol\\ServerTestClient.json \r\n-c C:\\WorkingDir\\i5000\\base-systems\\RaycoWylie.Server\\protocol\\ServerTestClient.cs \r\n--namespace RayccoWylie.Server.Test.Client \r\nC:\\WorkingDir\\i5000\\base-systems\\RaycoWylie.Server\\bin\\Debug\\net8.0\\RaycoWylie.Server.dll",
+      "workingDirectory": "C:\\WorkingDir\\i5000\\base-systems\\RaycoWylie.Server\\protocol"
     }
   }
 }

@@ -94,17 +94,17 @@ namespace test
 
             Type[] hubs = types.Where(t => t.BaseType?.FullName?.Contains("Microsoft.AspNetCore.SignalR.Hub") ?? false).ToArray();
 
-            var document = generator.GenerateForHubsAsync(new Dictionary<string, Type>(hubs.Select(t => new KeyValuePair<string, Type>(t.Name, t)))).Result;
+            //var document = generator.GenerateForHubsAsync(new Dictionary<string, Type>(hubs.Select(t => new KeyValuePair<string, Type>(t.Name, t)))).Result;
 
-            var rSimplified = document.Definitions["RSimplified"];
-            foreach (var key in rSimplified.Properties.Keys)
-            {
-                if (key != "stringID" && key != "properties" && key != "objectValue")
-                    rSimplified.Properties.Remove(key);
-            }
+            //var rSimplified = document.Definitions["RSimplified"];
+            //foreach (var key in rSimplified.Properties.Keys)
+            //{
+            //    if (key != "stringID" && key != "properties" && key != "objectValue")
+            //        rSimplified.Properties.Remove(key);
+            //}
 
-            var json = document.ToJson();
-            File.WriteAllText(Path.Combine("", "specs.json"), json);
+            //var json = document.ToJson();
+            //File.WriteAllText(Path.Combine("", "specs.json"), json);
         }
     }
 
